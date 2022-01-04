@@ -51,22 +51,26 @@ class MCP48XX(object):
     #                  VOUT pin is connected to 500 kOHM typical)
     # 11-0: data bits
 
-    self.HIGH = 1
-    self.LOW  = 0
 
-    self.CHAN_B = 1
-    self.CHAN_A = 0
 
     def __init__(self, model, spi_id, cs, sck_pin, mosi_pin, miso_pin):
+        # const
+        self.HIGH = 1
+        self.LOW  = 0
+
+        self.CHAN_B = 1
+        self.CHAN_A = 0
+        
+        # pins
         self.chipselect = cs
         self.chipselect_pin = Pin(cs, Pin.OUT)
 
         self.spi_id = spi_id
 
         # Model filter
-        if model != TYPE_OF_MCP48xx.MCP4822 or
-            model != TYPE_OF_MCP48xx.MCP4812 or
-            model != TYPE_OF_MCP48xx.MCP4802:
+        if not (model == TYPE_OF_MCP48xx.MCP4822 or
+                model == TYPE_OF_MCP48xx.MCP4812 or
+                model == TYPE_OF_MCP48xx.MCP4802):
             raise ValueError("Not a valid type, use MCP4822, MCP4812, MCP4802")
 
         # The write command consists of 16 bits and is
@@ -94,6 +98,7 @@ class MCP48XX(object):
         self.chipSelectHigh()
         self.spi =  SPI(self.spi_id,
                         baudrate=400000,
+                        firstbit=SPI.MSB,
                         sck = self.sck,
                         mosi = self.mosi,
                         miso = self.miso)
@@ -106,24 +111,29 @@ class MCP48XX(object):
         buf = bytearray(2)
 
         if channel == self.CHAN_B:
-            buf[1] |= 2**7     # Set channel B
+            # Set channel B
+            buf[0] |= 2**7     
+            
             if self.gain_B:
-                buf[1] |= 2**5
+                buf[0] |= 2**5
             if self.on_B:
-                buf[1] |= 2**4
+                buf[0] |= 2**4
 
-            buf[1] |= self.raw_value_B >> 8 & 15
-            buf[0] |= self.raw_value_B
+            buf[0] |= self.raw_value_B >> 8 & 15
+            buf[1] =self.raw_value_B
+            
+            #buf[0] = 0xff
 
             self.dataB = buf
         else:
             if self.gain_A:
-                buf[1] |= 2**5
+                buf[0] |= 2**5
             if self.on_A:
-                buf[1] |= 2**4
-
-            buf[1] |= self.raw_value_A >> 8 & 15
-            buf[0] |= self.raw_value_A
+                buf[0] |= 2**4
+            
+            buf[0] |= self.raw_value_A >> 8 & 15
+            buf[1]  = self.raw_value_A
+            
 
             self.dataA = buf
 
@@ -142,11 +152,29 @@ class MCP48XX(object):
         self.chipselect_state = self.LOW
         self.chipselect_pin.off()
 
-    def setValue(self, value):
+    def setValueA(self, value):
+        if value < 0:
+            raise ValueError("Underflow value detected")
+            
+        if value >= self.max:
+            raise ValueError("Overflow value detected for configured chip")
+        
+        self.turnOnChannelA()
         self.raw_value_A = value
+        
+        self.updateDAC_per_chan(self.CHAN_A)
 
-    def setValue(self, value):
+    def setValueB(self, value):
+        if value < 0:
+            raise ValueError("Underflow value detected")
+        
+        if value >= self.max:
+            raise ValueError("Overflow value reached for configured chip")
+        
+        self.turnOnChannelB()
         self.raw_value_B = value
+        
+        self.updateDAC_per_chan(self.CHAN_B)
 
     def turnOnChannelA(self):
         self.on_A = True
@@ -167,3 +195,23 @@ class MCP48XX(object):
         self.gain_B = True
 
 
+### MAIN
+if __name__ == '__main__':
+    import utime
+    
+    print("Hello")
+
+    mcp = MCP48XX(TYPE_OF_MCP48xx.MCP4822, 0, 5, 2, 3, 4)
+    mcp.setGainA()
+    mcp.setGainB()
+
+
+    while True:
+        # Testing with a LED
+        for x in range(0, 2**TYPE_OF_MCP48xx.MCP4822 - 1):
+            mcp.setValueA(x)
+            mcp.setValueB(x)
+        
+        for x in range(2**TYPE_OF_MCP48xx.MCP4822 - 1, 0, -1):
+            mcp.setValueA(x)
+            mcp.setValueB(x)
