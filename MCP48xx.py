@@ -201,17 +201,28 @@ if __name__ == '__main__':
     
     print("Hello")
 
-    mcp = MCP48XX(TYPE_OF_MCP48xx.MCP4822, 0, 5, 2, 3, 4)
-    mcp.setGainA()
-    mcp.setGainB()
-
+    mcp0 = MCP48XX(TYPE_OF_MCP48xx.MCP4822, 0, 15, 2, 3, 4)
+    mcp0.setGainA()
+    mcp0.setGainB()
+    
+    mcp1 = MCP48XX(TYPE_OF_MCP48xx.MCP4822, 0, 05, 2, 3, 4)
+    mcp1.setGainA()
+    mcp1.setGainB()
+    
+    
 
     while True:
         # Testing with a LED
         for x in range(0, 2**TYPE_OF_MCP48xx.MCP4822 - 1):
-            mcp.setValueA(x)
-            mcp.setValueB(x)
+            mcp0.setValueA(x)
+            mcp0.setValueB(x)
+            
+            mcp1.setValueA(x)
+            mcp1.setValueB(x)
         
         for x in range(2**TYPE_OF_MCP48xx.MCP4822 - 1, 0, -1):
-            mcp.setValueA(x)
-            mcp.setValueB(x)
+            mcp0.setValueA(x)
+            mcp0.setValueB(x)
+
+            mcp1.setValueA(x)
+            mcp1.setValueB(x)
