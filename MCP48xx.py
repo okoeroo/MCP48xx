@@ -114,7 +114,7 @@ class MCP48XX(object):
             # Set channel B
             buf[0] |= 2**7     
             
-            if self.gain_B:
+            if not self.gain_B:
                 buf[0] |= 2**5
             if self.on_B:
                 buf[0] |= 2**4
@@ -126,7 +126,7 @@ class MCP48XX(object):
 
             self.dataB = buf
         else:
-            if self.gain_A:
+            if not self.gain_A:
                 buf[0] |= 2**5
             if self.on_A:
                 buf[0] |= 2**4
@@ -188,11 +188,15 @@ class MCP48XX(object):
     def shutdownChannelB(self):
         self.on_B = False
 
-    def setGainA(self):
-        self.gain_A = True
+    def setGainA(self, x):
+        if not type(x) is bool:
+            raise TypeError("bool type expected")
+        self.gain_A = x
 
-    def setGainB(self):
-        self.gain_B = True
+    def setGainB(self, x):
+        if not type(x) is bool:
+            raise TypeError("bool type expected")
+        self.gain_B = x
 
 
 ### MAIN
@@ -202,12 +206,12 @@ if __name__ == '__main__':
     print("Hello")
 
     mcp0 = MCP48XX(TYPE_OF_MCP48xx.MCP4822, 0, 15, 2, 3, 4)
-    mcp0.setGainA()
-    mcp0.setGainB()
+    mcp0.setGainA(True)
+    mcp0.setGainB(True)
     
     mcp1 = MCP48XX(TYPE_OF_MCP48xx.MCP4822, 0, 05, 2, 3, 4)
-    mcp1.setGainA()
-    mcp1.setGainB()
+    mcp1.setGainA(True)
+    mcp1.setGainB(True)
     
     
 
